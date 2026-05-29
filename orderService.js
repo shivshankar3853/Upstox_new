@@ -183,6 +183,7 @@ async function placeOrder(order) {
       side: action,                 // BUY or SELL
       quantity: finalQty,
       instrument: instrumentKey,
+      trading_symbol: decoded.tradingSymbol || rawSymbol,
       exchange,
 
       orderId: orderId,

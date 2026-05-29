@@ -13,6 +13,7 @@ const tradeSchema = new mongoose.Schema({
 
   price: Number,
   avg_price: { type: Number, default: 0 },
+  trading_symbol: String,
 
   status: {
     type: String,

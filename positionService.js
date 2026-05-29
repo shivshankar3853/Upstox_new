@@ -23,23 +23,32 @@ async function getPositions() {
         status: { $in: ["OPEN", "PARTIAL"] },
         quantity: { $ne: 0 }
       },
-      { instrument: 1, entry_price: 1, target_price: 1 }
+      { instrument: 1, trading_symbol: 1, entry_price: 1, target_price: 1 }
     );
 
-    const positionMap = new Map();
+    const positionMapByToken = new Map();
+    const positionMapBySymbol = new Map();
+
     openTrades.forEach(trade => {
+      const data = {
+        entry_price: trade.entry_price || 0,
+        target_price: trade.target_price || 0
+      };
+
       if (trade.instrument) {
-        positionMap.set(trade.instrument, {
-          entry_price: trade.entry_price || 0,
-          target_price: trade.target_price || 0
-        });
+        positionMapByToken.set(trade.instrument, data);
+      }
+
+      if (trade.trading_symbol) {
+        positionMapBySymbol.set(trade.trading_symbol.toUpperCase(), data);
       }
     });
 
     return positions.map(position => {
-      const tradePosition = positionMap.get(
-        findInstrument(position.trading_symbol)?.instrument_token
-      );
+      const token = findInstrument(position.trading_symbol)?.instrument_token;
+      const tradePosition =
+        positionMapByToken.get(token) ||
+        positionMapBySymbol.get(position.trading_symbol?.toUpperCase());
       const entryPrice = tradePosition?.entry_price;
       const targetPrice = tradePosition?.target_price;
 

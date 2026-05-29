@@ -22,7 +22,9 @@ async function registerPosition(trade) {
     const baseSymbol = trade.instrument.split(" ")[0];
     const targetPoints = getTargetPoints(baseSymbol);
 
-    const entryPrice = Number(trade.avg_price || trade.price);
+    const entryPrice = Number(
+      trade.entry_price || trade.avg_price || trade.price
+    );
     
     // ✅ VALIDATION: Entry price must be valid positive number
     if (!Number.isFinite(entryPrice) || entryPrice <= 0) {
