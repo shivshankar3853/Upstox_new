@@ -106,4 +106,63 @@ function mapStatus(status) {
   return "OPEN";
 }
 
-module.exports = { syncOrders };
+// ==============================
+// SYNC SPECIFIC ORDER
+// ==============================
+async function syncSpecificOrder(orderId) {
+  try {
+    if (!orderId) return null;
+
+    const token = getAccessToken();
+    if (!token) return null;
+
+    const response = await axios.get(
+      "https://api.upstox.com/v2/order/retrieve-all",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000
+      }
+    );
+
+    const brokerOrders = response.data?.data || [];
+    const brokerOrder = brokerOrders.find(o => o.order_id === orderId);
+
+    if (brokerOrder) {
+      const newStatus = mapStatus(brokerOrder.status);
+
+      try {
+        const updatedTrade = await Trade.findOneAndUpdate(
+          { orderId: orderId },
+          {
+            status: newStatus,
+            filled_qty: brokerOrder.filled_quantity || 0,
+            avg_price: brokerOrder.average_price || 0,
+            raw: brokerOrder
+          },
+          { new: true }
+        );
+
+        if (global.io) {
+          global.io.emit("order_update", {
+            orderId: orderId,
+            status: newStatus,
+            avg_price: brokerOrder.average_price || 0
+          });
+        }
+
+        return updatedTrade;
+      } catch (updateErr) {
+        console.error(`❌ Failed to update trade ${orderId}:`, updateErr.message);
+        return null;
+      }
+    } else {
+      console.log("⚠️ Order not found in broker:", orderId);
+      return null;
+    }
+  } catch (err) {
+    console.error("❌ Sync specific order error:", err.response?.data || err.message);
+    return null;
+  }
+}
+
+module.exports = { syncOrders, syncSpecificOrder };

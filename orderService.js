@@ -5,6 +5,7 @@ const Trade = require("./models/Trade");
 const { findInstrument } = require("./instrumentStore");
 const { decodeSymbol } = require("./symbolDecoder");
 const { registerPosition } = require("./profitBooking");
+const { syncSpecificOrder } = require("./syncService");
 
 // ==============================
 // 🚀 PLACE ORDER (MCX_FO + LOT SIZE)
@@ -189,25 +190,27 @@ async function placeOrder(order) {
     // ==============================
     // 🎯 STEP 6: REGISTER FOR PROFIT BOOKING
     // ==============================
-    // Try to register position immediately, but retry if entry price not available
-    const maxRetries = 5;
+    // Sync the specific order first to get fill data, then register
+    const maxRetries = 10;
     let retryCount = 0;
     
     const attemptRegistration = async () => {
       retryCount++;
-      const latestTrade = await Trade.findById(trade._id);
       
-      if (latestTrade && (latestTrade.avg_price > 0 || latestTrade.price > 0)) {
+      // First, sync the order with broker to get avg_price
+      const syncedTrade = await syncSpecificOrder(orderId);
+      
+      if (syncedTrade && (syncedTrade.avg_price > 0 || syncedTrade.price > 0)) {
         // Entry price is available, register for profit booking
-        latestTrade.profit_booking_status = "MONITORING";
-        await latestTrade.save();
-        registerPosition(latestTrade);
+        syncedTrade.profit_booking_status = "MONITORING";
+        await syncedTrade.save();
+        registerPosition(syncedTrade);
         console.log("✅ Position registered for profit booking");
       } else if (retryCount < maxRetries) {
         // Retry after 2 seconds
         setTimeout(attemptRegistration, 2000);
       } else {
-        console.log("⚠️  Max retries reached for profit booking registration");
+        console.log("⚠️  Max retries reached for profit booking registration. Synced Trade:", syncedTrade ? `avg_price=${syncedTrade.avg_price}, status=${syncedTrade.status}` : "null");
       }
     };
 
