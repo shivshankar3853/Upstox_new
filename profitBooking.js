@@ -12,7 +12,7 @@ const activePositions = new Map(); // key: orderId, value: position data
 // ==============================
 // 🎯 REGISTER POSITION FOR MONITORING
 // ==============================
-function registerPosition(trade) {
+async function registerPosition(trade) {
   try {
     if (!trade || !trade.orderId) {
       console.log("⚠️ Invalid trade for registration");
