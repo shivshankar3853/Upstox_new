@@ -89,12 +89,21 @@ async function getLTP(instrumentToken, exchange) {
       return null;
     }
 
+    // ✅ Handle instrument_key format: could be "NSE_EQ|INE731H01025" or "INE731H01025"
+    let key = instrumentToken;
+    if (!key.includes(":") && !key.includes("|")) {
+      // If it's just the ISIN code, prepend exchange
+      key = `${exchange}_EQ|${key}`;
+    }
+
+    console.log(`📍 Fetching LTP for: ${key}`);
+
     const res = await axios.get(
       `https://api.upstox.com/v2/market-quote/ltp`,
       {
         params: {
           mode: "LTP",
-          instrument_key: `${exchange}:${instrumentToken}`
+          instrument_key: key
         },
         headers: {
           Authorization: `Bearer ${token}`,
@@ -106,12 +115,16 @@ async function getLTP(instrumentToken, exchange) {
 
     if (res.data && res.data.data) {
       const ltpData = Object.values(res.data.data)[0];
-      return ltpData?.last_price || null;
+      const ltp = ltpData?.last_price || null;
+      if (ltp) {
+        console.log(`💹 LTP: ${ltp}`);
+      }
+      return ltp;
     }
 
     return null;
   } catch (err) {
-    console.error("❌ LTP Fetch Error:", err.message);
+    console.error("❌ LTP Fetch Error:", err.response?.data?.errors || err.message);
     return null;
   }
 }
