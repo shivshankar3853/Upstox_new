@@ -105,13 +105,17 @@ async function loadPositions() {
     const pnlVal = p.pnl || 0;
     const cls = pnlVal >= 0 ? "profit" : "loss";
 
+    const entryPrice = p.average_price || p.entry_price || 0;
+    const targetPrice = p.target_price || 0;
+
     positionsTable.innerHTML += `
       <tr>
         <td>${p.trading_symbol}</td>
         <td>${Math.abs(p.quantity)}</td>
         <td>${type}</td>
-        <td>${p.average_price}</td>
+        <td>${entryPrice}</td>
         <td>${p.last_price}</td>
+        <td>${targetPrice}</td>
         <td class="${cls}">${pnlVal}</td>
       </tr>
     `;

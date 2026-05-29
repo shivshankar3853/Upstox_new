@@ -60,6 +60,14 @@ function registerPosition(trade) {
 
     activePositions.set(trade.orderId, positionData);
 
+    await Trade.updateOne(
+      { orderId: trade.orderId },
+      {
+        entry_price: entryPrice,
+        target_price: targetPrice
+      }
+    );
+
     console.log(`
     ✅ POSITION REGISTERED FOR PROFIT BOOKING
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -164,7 +172,7 @@ async function bookProfit(position) {
       { orderId: position.orderId },
       {
         status: "CLOSED",
-        targetPrice: position.targetPrice,
+        target_price: position.targetPrice,
         pnl: position.targetPoints,
         exit_time: new Date(),
         profit_booked: true

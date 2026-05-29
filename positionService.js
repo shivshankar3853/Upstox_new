@@ -1,5 +1,7 @@
 const axios = require("axios");
+const Trade = require("./models/Trade");
 const { getAccessToken } = require("./tokenManager");
+const { findInstrument } = require("./instrumentStore");
 
 async function getPositions() {
   try {
@@ -14,7 +16,46 @@ async function getPositions() {
       }
     );
 
-    return res.data.data || [];
+    const positions = res.data.data || [];
+
+    const openTrades = await Trade.find(
+      {
+        status: { $in: ["OPEN", "PARTIAL"] },
+        quantity: { $ne: 0 }
+      },
+      { instrument: 1, entry_price: 1, target_price: 1 }
+    );
+
+    const positionMap = new Map();
+    openTrades.forEach(trade => {
+      if (trade.instrument) {
+        positionMap.set(trade.instrument, {
+          entry_price: trade.entry_price || 0,
+          target_price: trade.target_price || 0
+        });
+      }
+    });
+
+    return positions.map(position => {
+      const tradePosition = positionMap.get(
+        findInstrument(position.trading_symbol)?.instrument_token
+      );
+      const entryPrice = tradePosition?.entry_price;
+      const targetPrice = tradePosition?.target_price;
+
+      if (entryPrice > 0) {
+        position.entry_price = entryPrice;
+        if (!position.average_price || position.average_price === 0) {
+          position.average_price = entryPrice;
+        }
+      }
+
+      if (targetPrice > 0) {
+        position.target_price = targetPrice;
+      }
+
+      return position;
+    });
 
   } catch (err) {
     console.error("❌ Position Error:", err.response?.data);
