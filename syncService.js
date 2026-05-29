@@ -36,16 +36,22 @@ async function syncOrders() {
       // ==============================
       if (brokerOrder) {
         const newStatus = mapStatus(brokerOrder.status);
+        const entryPriceToSave = brokerOrder.average_price || brokerOrder.price || 0;
+        const updateFields = {
+          status: newStatus,
+          filled_qty: brokerOrder.filled_quantity || 0,
+          avg_price: brokerOrder.average_price || 0,
+          raw: brokerOrder
+        };
+
+        if (entryPriceToSave > 0) {
+          updateFields.entry_price = entryPriceToSave;
+        }
 
         try {
           await Trade.updateOne(
             { orderId: trade.orderId },
-            {
-              status: newStatus,
-              filled_qty: brokerOrder.filled_quantity || 0,
-              avg_price: brokerOrder.average_price || 0,
-              raw: brokerOrder
-            }
+            updateFields
           );
 
           if (global.io) {
@@ -129,16 +135,22 @@ async function syncSpecificOrder(orderId) {
 
     if (brokerOrder) {
       const newStatus = mapStatus(brokerOrder.status);
+      const entryPriceToSave = brokerOrder.average_price || brokerOrder.price || 0;
+      const updateFields = {
+        status: newStatus,
+        filled_qty: brokerOrder.filled_quantity || 0,
+        avg_price: brokerOrder.average_price || 0,
+        raw: brokerOrder
+      };
+
+      if (entryPriceToSave > 0) {
+        updateFields.entry_price = entryPriceToSave;
+      }
 
       try {
         const updatedTrade = await Trade.findOneAndUpdate(
           { orderId: orderId },
-          {
-            status: newStatus,
-            filled_qty: brokerOrder.filled_quantity || 0,
-            avg_price: brokerOrder.average_price || 0,
-            raw: brokerOrder
-          },
+          updateFields,
           { new: true }
         );
 

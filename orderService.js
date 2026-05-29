@@ -159,6 +159,20 @@ async function placeOrder(order) {
 
     const orderData = response.data;
     const orderId = orderData.data?.order_id || "NA";
+    const initialAvgPrice =
+      orderData?.data?.average_price ||
+      orderData?.data?.avg_price ||
+      orderData?.average_price ||
+      orderData?.avg_price ||
+      orderData?.data?.price ||
+      orderData?.price ||
+      0;
+    const initialPrice =
+      orderData?.data?.price ||
+      orderData?.price ||
+      orderData?.data?.average_price ||
+      orderData?.average_price ||
+      0;
 
     console.log("✅ Order Success:", orderData);
 
@@ -173,8 +187,9 @@ async function placeOrder(order) {
 
       orderId: orderId,
 
-      price: 0,
-      avg_price: 0,
+      price: initialPrice,
+      avg_price: initialAvgPrice,
+      entry_price: initialAvgPrice || initialPrice,
       filled_qty: 0,
 
       status: "OPEN",              // ALWAYS OPEN initially

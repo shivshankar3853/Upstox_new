@@ -139,7 +139,7 @@ async function loadTrades() {
   const cls = t.pnl >= 0 ? "profit" : "loss";
 
   const tradedPrice =
-    t.price || t.avg_price || t.entry_price || 0;
+    t.avg_price || t.entry_price || t.price || 0;
 
   tradesTable.innerHTML += `
     <tr>
